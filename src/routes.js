@@ -310,6 +310,11 @@ export default new VueRouter({
           { path: 'ERCDevelopConsumeDetailControl',              component: resolve => require(['./views/erc/longtermassets/ERCDevelopConsumeDetailControl'], resolve) },
           // { path: 'ERCAmortizeConsumeControlCopy',              component: resolve => require(['./views/erc/longtermassets/ERCAmortizeConsumeControlCopy'], resolve) },
       ]},
+
+      { path: '/shxp/baseconfig',                        component: resolve => require(['./components/mainSystem'], resolve),
+          children: [
+              { path: 'SHXPProductControl',               component: resolve => require(['./views/shxp/baseconfig/SHXPProductControl.vue'], resolve) },
+          ]},
     { path: '/system',          component: resolve => require(['./components/mainSystem'], resolve),
       children: [
         { path: 'home',                   component: resolve => require(['./views/home'], resolve) },
