@@ -71,6 +71,26 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="row">
+                            <div class="form-group col-sm-6">
+                                <label class="col-sm-4 control-label"><span class="table-required">*</span>上传照片</label>
+                                <div class="col-sm-8">
+                                    <input id='designUpload' type="file" name="file" style="position:relative;top: 7px;">
+                                    <div  v-for="(file,index) in files" class="img-div" >
+                                        <a :href=file.file_url target="_blank">
+                                            <img class="consumables-img" :src="file.file_url" alt="">
+                                        </a>
+                                        <i class="glyphicon glyphicon-remove-sign delete_icon" v-on:click="removeImage(index,file)" ></i>
+                                    </div>
+
+
+                                    <!--<a :href=files.file_url target="_blank">-->
+                                        <!--<img class="consumables-img" :src="files.file_url" alt="">-->
+                                    <!--</a>-->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-info">保存</button>
@@ -90,22 +110,76 @@
             return {
                 workRow: {},
                 oldRow: '',
-                pagePara: {}
+                pagePara: {},
+                files:[]
+
             }
         },
         name: 'SHXPProductControl',
         mounted: async function() {
-            this.productTable = $('#productTable');
-            this.initData();
+            let _self = this;
+            _self.productTable = $('#productTable');
+            _self.initData();
+
+
+            $(function(){
+                common.fileUpload(_self, $('#designUpload'), apiUrl, function(fileInfo) {
+                    _self.files.push({
+                        file_url:fileInfo.url,
+                        file_name:fileInfo.name
+                    })
+                });
+            })
+
         },
         methods: {
+            removeImage:function (index,file) {
+                let _self=this;
+                _self.files.splice(index, 1);
+                console.log('file.file_url',file.file_url)
+                if(file.file_url){
+                    var params={
+                        product_img_url:file.file_url
+                    };
+                    _self.$http.post(apiUrl + 'removeFile', params).then(response =>{
+                        if(response.body.errno==0){
+                            this.productTable.bootstrapTable("refresh");
+                            $('#AddModal').modal('hide')
+                        }else {
+                            console.log(response.msg)
+                        }
+                    },(response) =>{
+                        common.dealErrorCommon(response);
+                    })
+                }
+            },
             queryParams: function (params) {
                 return JSON.stringify(params)
             },
-            initTable: function () {
-                window.tableEvents = {
 
-                };
+            initTable: function () {
+                let _self = this
+                // window.designEvents = {
+                //     'change .fileupload': function(e, value, row, index) {
+                //         common.fileFileUpload(this, _self, row, apiUrl, 'inter_review_update', $table, 'internal_review_id')
+                //     },
+                //     'click .delete-button': function(e, value, row, index) {
+                //         common.deleteFiles(this, _self, row, apiUrl, 'delete_file', $table, 'internal_review_id')
+                //     }
+                // }
+
+                window.tableEvents = {
+                    "click .delete" :async function (e, value, row, index){
+                        let param = {
+                            product_id:row.product_id,
+                            product_img_url:row.product_img_url
+                        }
+                        let response = await _self.$http.post(apiUrl + 'deleteProduct', param);
+                        common.dealSuccessCommon('删除成功');
+                        _self.productTable.bootstrapTable("refresh");
+
+                    },
+                }
                 this.productTable.bootstrapTable({
                     method: 'POST',
                     url: apiUrl + 'searchProduct',
@@ -123,9 +197,16 @@
                         common.BTRowFormatEditable('product_name', '菜品名称'),
                         common.BTRowFormatEdSelect2(this, 'product_class', '所属类别', 'shxpProductClass'),
                         common.BTRowFormatEditable('product_price', '单价'),
-                        common.BTRowFormatWithFormatter('file_url', '菜品图片', common.imageViewerFormatter),
+                        // common.BTRowFormatWithFormatter('file_url', '菜品图片', common.imageViewerFormatter),
+                        common.BTRowFormatWithFormatter('product_img_url', '菜品图片', common.fileFormatter),
+                        // common.BTRowFormatWithFE('files', '文件', common.filesFormatterWithUpload, designEvents),
                         common.BTRowFormatEdSelect2(this, 'product_recommend', '是否推荐菜', 'shxpProductRecommend'),
-                        common.BTRowFormat('created_at', '创建日期')
+                        common.BTRowFormat('created_at', '创建日期'),
+                        common.actFormatter('act', ()=>{
+                            return [
+                                '<a class="btn btn-info btn-xs m-r-5 delete">删除</a>'
+                            ].join('')
+                        }, tableEvents)
                     ],
                     idField: 'product_id',
                     uniqueId: 'product_id',
@@ -156,6 +237,7 @@
             },
             addM: function(event) {
                 this.workRow = {};
+                this.files = []
                 $('#product_class').val(null).trigger('change');
                 $('#product_recommend').val(null).trigger('change');
                 $('#formA').parsley().reset();
@@ -166,6 +248,9 @@
                     if ($('#formA').parsley().isValid()) {
                         this.workRow.product_class = common.getSelect2Val('product_class')
                         this.workRow.product_recommend = common.getSelect2Val('product_recommend')
+                        if(this.files && this.files.length>0){
+                            this.workRow.product_img_url = this.files[0].file_url;
+                        }
                         let response = await this.$http.post(apiUrl + 'addProduct', this.workRow);
                         common.dealSuccessCommon('增加成功');
                         this.productTable.bootstrapTable("refresh");
@@ -182,4 +267,21 @@
     }
 </script>
 <style scoped>
+    .consumables-img{
+        width: 70px;
+        height: 70px;
+    }
+    .img-div{
+        margin-top: 24px;
+        position: relative;
+        font-size:16px;
+        display: inline-block;
+    }
+    .delete_icon{
+        position: absolute;
+        right:0;
+        top:-10px;
+        z-index: 1;
+        cursor: pointer;
+    }
 </style>
