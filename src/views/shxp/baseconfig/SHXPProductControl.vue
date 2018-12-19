@@ -238,6 +238,7 @@
             addM: function(event) {
                 this.workRow = {};
                 this.files = []
+                $('#designUpload').val('')
                 $('#product_class').val(null).trigger('change');
                 $('#product_recommend').val(null).trigger('change');
                 $('#formA').parsley().reset();
