@@ -314,6 +314,7 @@ export default new VueRouter({
       { path: '/shxp/baseconfig',                        component: resolve => require(['./components/mainSystem'], resolve),
           children: [
               { path: 'SHXPProductControl',               component: resolve => require(['./views/shxp/baseconfig/SHXPProductControl.vue'], resolve) },
+              { path: 'SHXPSeatClassControl',               component: resolve => require(['./views/shxp/baseconfig/SHXPSeatClassControl.vue'], resolve) },
           ]},
     { path: '/system',          component: resolve => require(['./components/mainSystem'], resolve),
       children: [
